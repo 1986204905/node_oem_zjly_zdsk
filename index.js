@@ -11,7 +11,7 @@ const logger = winston.createLogger({
     ]
 });
 
-let configFile = "./zdsk/config.json";
+let configFile = "./config.json";
 let config = $fs.readFileSync($path.join(process.cwd(), configFile), 'utf8');
 config = JSON.parse(config);
 
