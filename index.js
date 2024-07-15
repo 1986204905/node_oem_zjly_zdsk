@@ -1,8 +1,7 @@
 global.$fs = require('fs');
 global.$path = require('path');
 global.$moment = require('moment');
-
-const { chromium, webkit, firefox } = require('playwright');
+const firefox = require('playwright').firefox;
 const winston = require('winston');
 
 const logger = winston.createLogger({
@@ -23,15 +22,7 @@ const pageGotoPath = config.pageGotoPath;
 (async () => {
     let browser = null;
     browser = await firefox.launch({ executablePath: browserPath, headless: false, permissions: ['camera'] });
-    const executablePath = firefox.executablePath();
-    console.log('Chromium executable path:', executablePath);
-    // if (process.env.NODE_ENV == "development") {
-    //     browser = await chromium.launch({ headless: false });
-    // } else {
-    //     browser = await webkit.launch({ executablePath: browserPath, headless: false });
-    // }
 
-    // 新建一个浏览器上下文
     const context = await browser.newContext();
 
     // await context.grantPermissions(['camera']);
@@ -41,25 +32,14 @@ const pageGotoPath = config.pageGotoPath;
     const page = await context.newPage({ viewport: { width: 1600, height: 900 } });
 
     await page.goto(pageGotoPath);
+    await page.setViewportSize({ width: 1600, height: 900 });
+
     if (process.env.NODE_ENV == "development") {
-        await page.setViewportSize({ width: 1600, height: 900 });
         await page.frameLocator('iframe').getByPlaceholder('请输入姓名').fill('');
         await page.frameLocator('iframe').getByPlaceholder('请输入身份证号').fill('');
     }
 
     // await page.getByRole('link', { name: '进入课程' }).click();
-    // await page.getByRole('row', { name: '专业课-质量员（市政方向） （必学课） 道路工程新设备（一） 李英杰 0% 未完成 开始听课' }).getByRole('link').click();
-    // const page2 = await page.waitForEvent('popup');
-
-    // await page2.waitForSelector(`.lists`, { timeout: 5000 });
-    // const xxElements = await page2.$$(`.lists`);
-    // for (const element of xxElements) {
-    //     const liElements = await element.$$('li');
-    //     for (const liElement of liElements) {
-    //         await liElement.click();
-    //     }
-    // }
-
 
     let parentElement = null;
     let checkTargetStatus = false;
@@ -97,9 +77,9 @@ const pageGotoPath = config.pageGotoPath;
             // clearInterval(checkTarget);
         } catch (error) {
             if (error && error.name && error.name == "TimeoutError") {
-                logger.info(`元素未找到或页面加载超时`);
+                logger.info(`元素未找到或页面加载超时1`);
             } else {
-                logger.error(`元素未找到或页面加载超时:${error}`);
+                logger.error(`元素未找到或页面加载超时1:${error}`);
             }
             checkTargetStatus = false;
             return;
@@ -109,7 +89,6 @@ const pageGotoPath = config.pageGotoPath;
 
 
     let directoryPage = null;
-    // 0页面为创建，1页面已创建，2页面检查已启动
     let directoryPageStatus = 0;
     let videoPage = null;
     let videoPageStatus = 0;
@@ -147,20 +126,16 @@ const pageGotoPath = config.pageGotoPath;
                     }
                 }
                 if (!status) continue;
-                // targetContentText = "开始听课"
 
                 const btnElements = await child.$$(`.${"w100"}`);
                 if (!btnElements) continue;
 
                 const links = [];
 
-                // 遍历每个元素
                 for (const element of btnElements) {
-                    // 获取当前元素下的所有a标签
                     const aTags = await element.$$('a');
                     links.push(...aTags);
 
-                    // 检查是否有子元素，如果有则递归查找
                     const childElements = await element.$$('*');
                     for (const childElement of childElements) {
                         const childLinks = await getAllALinks(childElement, '*');
@@ -194,9 +169,9 @@ const pageGotoPath = config.pageGotoPath;
             startStatus = false;
         } catch (error) {
             if (error && error.name && error.name == "TimeoutError") {
-                logger.info(`元素未找到或页面加载超时`);
+                logger.info(`元素未找到或页面加载超时2`);
             } else {
-                logger.error(`元素未找到或页面加载超时:${error}`);
+                logger.error(`元素未找到或页面加载超时2:${error}`);
             }
             startStatus = true;
             startSKStatus = false;
@@ -231,9 +206,9 @@ const pageGotoPath = config.pageGotoPath;
 
         } catch (error) {
             if (error && error.name && error.name == "TimeoutError") {
-                logger.info(`元素未找到或页面加载超时`);
+                logger.info(`元素未找到或页面加载超时3`);
             } else {
-                logger.error(`元素未找到或页面加载超时:${error}`);
+                logger.error(`元素未找到或页面加载超时3:${error}`);
             }
             directoryPage && await directoryPage.close();
             directoryPageStatus = 0;
@@ -245,7 +220,6 @@ const pageGotoPath = config.pageGotoPath;
         try {
             if (videoPageStatus != 1) return;
             videoPageStatus = 2;
-
 
             const jxElement = await videoPage.getByRole('button', { name: '继续学习' });
             if (jxElement) {
@@ -259,17 +233,15 @@ const pageGotoPath = config.pageGotoPath;
 
             const videoElement = await videoPage.$('video');
 
-
-            const isVideoEnded = await videoPage.evaluate(video => video.ended, videoElement);
-            if (isVideoEnded) {
-                console.log('Video has ended.');
-            }
+            // const isVideoEnded = await videoPage.evaluate(video => video.ended, videoElement);
+            // if (isVideoEnded) {
+            //     console.log('Video has ended.');
+            // }
 
             const isPaused = await videoPage.evaluate(video => video.paused, videoElement);
+
             if (isPaused) {
                 console.log('Video is paused. Resuming playback.');
-
-                // 在页面上下文中调用video.play()方法来继续播放
                 await videoPage.evaluate(video => video.play(), videoElement);
             }
 
@@ -279,9 +251,9 @@ const pageGotoPath = config.pageGotoPath;
             videoPageStatus = 1;
         } catch (error) {
             if (error && error.name && error.name == "TimeoutError") {
-                logger.info(`元素未找到或页面加载超时`);
+                logger.info(`元素未找到或页面加载超时4`);
             } else {
-                logger.error(`元素未找到或页面加载超时:${error}`);
+                logger.error(`元素未找到或页面加载超时4:${error}`);
             }
             videoPageStatus = 1;
             return;
@@ -323,36 +295,12 @@ const pageGotoPath = config.pageGotoPath;
                 }
             }
 
-            console.log("1")
-            // let textContent = await TartgetElement.innerText();
-
-            // if(textContent != "开始验证") return;
-
-            // jbox-button jbox-button-focus
-
-
-            // const isVideoEnded = await videoPage.evaluate(video => video.ended, videoElement);
-            // if (isVideoEnded) {
-            //     console.log('Video has ended.');
-            // }
-
-            // const isPaused = await videoPage.evaluate(video => video.paused, videoElement);
-            // if (isPaused) {
-            //     console.log('Video is paused. Resuming playback.');
-
-            //     // 在页面上下文中调用video.play()方法来继续播放
-            //     await videoPage.evaluate(video => video.play(), videoElement);
-            // }
-
-
-
-
             verifyListeningStastus = 1;
         } catch (error) {
             if (error && error.name && error.name == "TimeoutError") {
-                logger.info(`元素未找到或页面加载超时`);
+                logger.info(`元素未找到或页面加载超时5`);
             } else {
-                logger.error(`元素未找到或页面加载超时:${error}`);
+                logger.error(`元素未找到或页面加载超时5:${error}`);
             }
             verifyListeningStastus = 1;
             return;
