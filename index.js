@@ -1,7 +1,7 @@
 global.$fs = require('fs');
 global.$path = require('path');
 global.$moment = require('moment');
-const firefox = require('playwright').firefox;
+const { chromium, firefox } = require('playwright');
 const winston = require('winston');
 
 const logger = winston.createLogger({
@@ -33,6 +33,8 @@ const pageGotoPath = config.pageGotoPath;
 
     await page.goto(pageGotoPath);
     await page.setViewportSize({ width: 1600, height: 900 });
+
+
 
     if (process.env.NODE_ENV == "development") {
         await page.frameLocator('iframe').getByPlaceholder('请输入姓名').fill('');
